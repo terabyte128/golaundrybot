@@ -2,24 +2,26 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/terabyte128/golaundrybot/machine"
-	"github.com/terabyte128/golaundrybot/messaging"
-	"github.com/terabyte128/golaundrybot/pubsub"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
-var Machines = []*machine.LaundryMachine{
-	machine.NewLaundryMachine("washer", 3.5, 10),
-	machine.NewLaundryMachine("dryer", 8, 10),
+var machines = map[string]*LaundryMachine{
+	"washer": NewLaundryMachine("washer", 3.5, 10),
+	"dryer":  NewLaundryMachine("dryer", 8, 10),
 }
+
+var machineNames = make([]string, len(machines))
 
 func publishStates() {
 	for _, machine := range machines {
-		pubsub.Publish(fmt.Sprintf("garage/laundry/%s/machineState", machine.GetName()), 1, fmt.Sprint(machine.GetState()))
+		MqttPublish(fmt.Sprintf("garage/laundry/%s/machineState", machine.GetName()), 1, fmt.Sprint(machine.GetState()))
 
 		for roommate, lightState := range machine.GetLightStates() {
 			fmt.Printf("publishing states %v: %v\n", roommate, lightState)
-			pubsub.Publish(
+			MqttPublish(
 				fmt.Sprintf("garage/laundry/%s/buttons/%s/lightState", machine.GetName(), roommate.Name), 1,
 				fmt.Sprint(lightState),
 			)
@@ -28,24 +30,31 @@ func publishStates() {
 }
 
 func main() {
-	pubsub.Connect()
+	MqttConnect()
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
+
+	i := 0
 
 	for _, machine := range machines {
 		// subscribe to machine updates
-		pubsub.Subscribe(
+		MqttSubscribe(
 			fmt.Sprintf("garage/laundry/%s/ampReading", machine.GetName()), 1,
 			generateMachineUpdateFn(machine),
 		)
 
-		for _, roommate := range messaging.Roommates {
+		machineNames[i] = machine.GetName()
+
+		for _, roommate := range roommates {
 			// subscribe to button updates
-			pubsub.Subscribe(
+			MqttSubscribe(
 				fmt.Sprintf("garage/laundry/%s/buttons/%s/pressed", machine.GetName(), roommate.Name), 1,
 				generateButtonUpdateFn(machine, roommate),
 			)
 		}
 	}
 
-	for {
-	}
+	sig := <-done
+	log.Printf("Received %s, shutting down.", sig.String())
 }

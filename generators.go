@@ -5,11 +5,9 @@ import (
 	"strconv"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/terabyte128/golaundrybot/machine"
-	"github.com/terabyte128/golaundrybot/messaging"
 )
 
-func generateMachineUpdateFn(mac *machine.LaundryMachine) func(client mqtt.Client, message mqtt.Message) {
+func generateMachineUpdateFn(mac *LaundryMachine) func(client mqtt.Client, message mqtt.Message) {
 	return func(client mqtt.Client, message mqtt.Message) {
 		amps, err := strconv.ParseFloat(string(message.Payload()), 32)
 
@@ -23,7 +21,7 @@ func generateMachineUpdateFn(mac *machine.LaundryMachine) func(client mqtt.Clien
 	}
 }
 
-func generateButtonUpdateFn(mac *machine.LaundryMachine, roommate *messaging.Roommate) func(client mqtt.Client, message mqtt.Message) {
+func generateButtonUpdateFn(mac *LaundryMachine, roommate *Roommate) func(client mqtt.Client, message mqtt.Message) {
 	return func(client mqtt.Client, message mqtt.Message) {
 		mac.ButtonPress(roommate)
 		publishStates()
