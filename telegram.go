@@ -33,6 +33,8 @@ func listenForUpdates() {
 			return
 		}
 
+		log.Printf("Received command %s", update.Message.Command())
+
 		args := strings.Split(update.Message.CommandArguments(), " ")
 		resp := tg.NewMessage(update.Message.Chat.ID, "")
 

@@ -45,6 +45,7 @@ func main() {
 		)
 
 		machineNames[i] = machine.GetName()
+		i++
 
 		for _, roommate := range roommates {
 			// subscribe to button updates
