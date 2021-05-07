@@ -8,7 +8,7 @@ type Roommate struct {
 var roommates = []*Roommate{
 	{
 		Name:   "Sam",
-		ChatId: 147524383,
+		ChatId: 0,
 	},
 	{
 		Name:   "Claire",

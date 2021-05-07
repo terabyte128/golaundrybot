@@ -3,14 +3,15 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"strings"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-const BOT_TOKEN = "1005504135:AAFxLo6xN-2nVRm_AUJJdJWNEaNJLc6WmAE"
-const CHAT_ID = 147524383 // sam personal chat
-// const CHAT_ID := 18446744073403423083 // real roommate chat
+var BOT_TOKEN = ""
+var CHAT_ID int64 = 0
 
 var messengerBot *tg.BotAPI
 
@@ -101,6 +102,36 @@ func listenForUpdates() {
 
 func init() {
 	var err error
+
+	if token, ok := os.LookupEnv("BOT_TOKEN"); ok {
+		BOT_TOKEN = token
+	} else {
+		log.Fatal("Missing BOT_TOKEN")
+	}
+
+	if roommate_chat, ok := os.LookupEnv("ROOMMATE_CHAT_ID"); ok {
+		CHAT_ID, err = strconv.ParseInt(roommate_chat, 10, 64)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		log.Fatal("Missing ROOMMATE_CHAT_ID")
+	}
+
+	for _, roommate := range roommates {
+		varName := fmt.Sprintf("%s_CHAT_ID", strings.ToUpper(roommate.Name))
+
+		if chatId, ok := os.LookupEnv(varName); ok {
+			roommate.ChatId, err = strconv.ParseInt(chatId, 10, 64)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Fatalf("Missing %s", varName)
+		}
+	}
 
 	messengerBot, err = tg.NewBotAPI(BOT_TOKEN)
 	if err != nil {
