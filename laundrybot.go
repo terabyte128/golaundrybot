@@ -9,8 +9,8 @@ import (
 )
 
 var machines = map[string]*LaundryMachine{
-	"washer": NewLaundryMachine("washer", 3.5, 10),
-	"dryer":  NewLaundryMachine("dryer", 8, 10),
+	"washer": NewLaundryMachine("washer", 1, 300),
+	"dryer":  NewLaundryMachine("dryer", 4, 30),
 }
 
 var machineNames = make([]string, len(machines))
