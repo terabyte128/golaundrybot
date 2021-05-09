@@ -84,12 +84,8 @@ func listenForUpdates() {
 
 		switch update.Message.Command() {
 		case "claim":
-			err := machine.Claim(roommate)
-			if err != nil {
-				resp.Text = err.Error()
-			} else {
-				resp.Text = fmt.Sprintf("%s claimed by %s", machine.GetName(), roommate.Name)
-			}
+			machine.Claim(roommate)
+			resp.Text = fmt.Sprintf("%s claimed by %s", machine.GetName(), roommate.Name)
 
 		case "unclaim":
 			err := machine.Unclaim(roommate)

@@ -58,6 +58,7 @@ func (machine *LaundryMachine) Update(ampReading float32) int {
 		if machine.CurrentState != STATE_RUNNING {
 			log.Printf("%s turned on", machine.Name)
 			machine.LastStartTime = time.Now()
+			machine.User = nil
 		}
 		machine.LastOnTime = time.Now()
 		machine.CurrentState = STATE_RUNNING
@@ -94,16 +95,11 @@ func (machine *LaundryMachine) ButtonPress(user *Roommate) {
 	}
 }
 
-func (machine *LaundryMachine) Claim(user *Roommate) error {
-	if machine.User == nil {
-		machine.User = user
+func (machine *LaundryMachine) Claim(user *Roommate) {
+	machine.User = user
 
-		if machine.CurrentState == STATE_READY {
-			machine.CurrentState = STATE_CLAIMED
-		}
-		return nil
-	} else {
-		return fmt.Errorf("%s has already been claimed by %s", machine.Name, machine.User.Name)
+	if machine.CurrentState == STATE_READY {
+		machine.CurrentState = STATE_CLAIMED
 	}
 }
 

@@ -25,6 +25,12 @@
             <div class="card-body">
                 <h5 class="card-title">
                     {{.Name}} &nbsp;<span class="badge bg-{{index $.stateColors .CurrentState}}">{{.GetFriendlyState}}</span>
+
+                    <small>
+                        {{if or (eq .GetFriendlyState "Running") (eq .GetFriendlyState "Awaiting Collection") }}
+                            <span style="float: right;">In use for {{.MinutesSinceStart}} minutes</span>
+                        {{end}}
+                    </small>
                 </h5>
                 {{if ne .GetFriendlyState "Ready"}}
                     {{if .User}} 
@@ -32,8 +38,12 @@
                     {{else}}
                         Machine is currently in use, but has not been claimed.
                     {{end}}
-
-                    It has been running for {{.MinutesSinceStart}} minutes.
+                    <br>
+                {{end}}
+                {{if and (eq .GetFriendlyState "Running") (not .User)}}
+                    To claim this machine, send the command <code>/claim {{.Name}}</code> to <a href="https://t.me/FrankReynoldsBot">TrashBot</a>.
+                {{else if eq .GetFriendlyState "Awaiting Collection"}}
+                    To mark this load as collected, send the command <code>/collect {{.Name}}</code> to <a href="https://t.me/FrankReynoldsBot">TrashBot</a>.
                 {{end}}
             </div>
         </div>
