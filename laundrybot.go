@@ -20,7 +20,7 @@ func publishStates() {
 		MqttPublish(fmt.Sprintf("garage/laundry/%s/machineState", machine.GetName()), 1, fmt.Sprint(machine.GetState()))
 
 		for roommate, lightState := range machine.GetLightStates() {
-			fmt.Printf("publishing states %v: %v\n", roommate, lightState)
+			// fmt.Printf("publishing states %v: %v\n", roommate, lightState)
 			MqttPublish(
 				fmt.Sprintf("garage/laundry/%s/buttons/%s/lightState", machine.GetName(), roommate.Name), 1,
 				fmt.Sprint(lightState),
@@ -55,6 +55,8 @@ func main() {
 			)
 		}
 	}
+
+	go serveHttp()
 
 	sig := <-done
 	log.Printf("Received %s, shutting down.", sig.String())

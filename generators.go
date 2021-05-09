@@ -16,7 +16,6 @@ func generateMachineUpdateFn(mac *LaundryMachine) func(client mqtt.Client, messa
 		}
 
 		mac.Update(float32(amps))
-		mac.NotifyUser()
 		publishStates()
 	}
 }
