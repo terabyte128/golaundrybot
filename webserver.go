@@ -1,7 +1,9 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,5 +31,10 @@ func init() {
 }
 
 func serveHttp() {
-	r.Run()
+	addr, ok := os.LookupEnv("HTTP_ADDR")
+	if !ok {
+		log.Fatal("env variable HTTP_ADDR not found")
+	}
+
+	r.Run(addr)
 }

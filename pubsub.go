@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -17,11 +18,21 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 var client mqtt.Client
 
 func init() {
+	mqttServer, ok := os.LookupEnv("MQTT_SERVER")
+	if !ok {
+		log.Fatalf("env variable MQTT_SERVER not found")
+	}
+
+	username, ok := os.LookupEnv("MQTT_USERNAME")
+	if !ok {
+		log.Fatalf("env variable MQTT_USERNAME not found")
+	}
+
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker("tcp://katara:1883")
+	opts.AddBroker(mqttServer)
 	opts.SetClientID("golaundrybot")
-	opts.SetUsername("arastra")
-	opts.SetPassword("arastra")
+	opts.SetUsername(username)
+	opts.SetPassword(username)
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
 
