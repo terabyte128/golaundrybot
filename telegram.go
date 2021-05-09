@@ -47,9 +47,24 @@ func listenForUpdates() {
 			continue
 		}
 
-		args := strings.Split(update.Message.CommandArguments(), " ")
+		var roommate *Roommate
+
+		for _, r := range roommates {
+			if r.ChatId == update.Message.Chat.ID {
+				roommate = r
+				break
+			}
+		}
+
 		resp := tg.NewMessage(update.Message.Chat.ID, "")
 
+		if roommate == nil {
+			resp.Text = fmt.Sprintf("User %s with ID %d was not found", update.Message.Chat.UserName, update.Message.Chat.ID)
+			updatesBot.Send(resp)
+			continue
+		}
+
+		args := strings.Split(update.Message.CommandArguments(), " ")
 		validMachines := strings.Join(machineNames, ", ")
 
 		if len(args) != 1 {
@@ -63,21 +78,6 @@ func listenForUpdates() {
 
 		if machine, ok = machines[args[0]]; !ok {
 			resp.Text = fmt.Sprintf("Invalid machine name %s, valid ones are: %s", args[0], validMachines)
-			updatesBot.Send(resp)
-			continue
-		}
-
-		var roommate *Roommate
-
-		for _, r := range roommates {
-			if r.ChatId == update.Message.Chat.ID {
-				roommate = r
-				break
-			}
-		}
-
-		if roommate == nil {
-			resp.Text = fmt.Sprintf("User %s with ID %d was not found", update.Message.Chat.UserName, update.Message.Chat.ID)
 			updatesBot.Send(resp)
 			continue
 		}
