@@ -36,6 +36,17 @@ func listenForUpdates() {
 
 		log.Printf("Received command %s", update.Message.Command())
 
+		valid := false
+		for _, command := range [...]string{"claim", "unclaim", "collect"} {
+			if update.Message.Command() == command {
+				valid = true
+			}
+		}
+
+		if !valid {
+			continue
+		}
+
 		args := strings.Split(update.Message.CommandArguments(), " ")
 		resp := tg.NewMessage(update.Message.Chat.ID, "")
 
