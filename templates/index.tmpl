@@ -20,30 +20,52 @@
         </div>
     </nav>
     <div class="container">
-        {{range .machines}}
+        {{range $machine := .machines}}
         <div class="card mt-4">
             <div class="card-body">
                 <h5 class="card-title">
-                    {{.Name}} &nbsp;<span class="badge bg-{{index $.stateColors .CurrentState}}">{{.GetFriendlyState}}</span>
+                    {{.Name}} &nbsp;<span
+                        class="badge bg-{{index $.stateColors .CurrentState}}">{{.GetFriendlyState}}</span>
 
                     <small>
                         {{if or (eq .GetFriendlyState "Running") (eq .GetFriendlyState "Awaiting Collection") }}
-                            <span style="float: right;">In use for {{.MinutesSinceStart}} minutes</span>
+                        <span class="text-secondary" style="float: right;">{{.TimeSinceStartString}}</span>
                         {{end}}
                     </small>
                 </h5>
-                {{if ne .GetFriendlyState "Ready"}}
-                    {{if .User}} 
-                        Machine is currently in use by <b>{{.User.Name}}</b>.
-                    {{else}}
-                        Machine is currently in use, but has not been claimed.
+                    {{if ne .GetFriendlyState "Ready"}}
+                        {{if .User}}
+                            <p class="card-text mb-2">
+                                Machine is currently in use by <b>{{.User.Name}}</b>. 
+                            </p>
+                            {{if ne .GetFriendlyState "Awaiting Collection"}}
+                                <form action="/cancel" method="post">
+                                    <input type="hidden" name="machine" value="{{$machine.Name}}">
+                                    <button class="btn btn-warning" href="/cancel">Cancel Claim</button>
+                                </form>
+                            {{end}}
+                        {{else}}
+                            <p class="card-text mb-2">
+                                Machine is currently in use, but has not been claimed.
+                            </p>
+                        {{end}}
                     {{end}}
-                    <br>
+                {{if and (ne .GetFriendlyState "Awaiting Collection") (not .User)}}
+                <p class="card-text mb-2">
+                    Select your name to claim it.<br>
+                </p>
+                {{range $.roommates}}
+                <form style="display: inline;" method="POST" action="/claim">
+                    <input type="hidden" name="machine" value="{{$machine.Name}}">
+                    <input type="hidden" name="roommate" value="{{.Name}}">
+                    <button class="btn btn-primary">{{.Name}}</button>
+                </form>
                 {{end}}
-                {{if and (eq .GetFriendlyState "Running") (not .User)}}
-                    To claim this machine, send the command <code>/claim {{.Name}}</code> to <a href="https://t.me/FrankReynoldsBot">TrashBot</a>.
                 {{else if eq .GetFriendlyState "Awaiting Collection"}}
-                    To mark this load as collected, send the command <code>/collect {{.Name}}</code> to <a href="https://t.me/FrankReynoldsBot">TrashBot</a>.
+                <form action="/collect" method="POST">
+                    <input type="hidden" name="machine" value="{{$machine.Name}}">
+                    <button class="btn btn-primary">Mark Collected</button>
+                </form>
                 {{end}}
             </div>
         </div>

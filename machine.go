@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -58,7 +57,10 @@ func (machine *LaundryMachine) Update(ampReading float32) int {
 		if machine.CurrentState != STATE_RUNNING {
 			log.Printf("%s turned on", machine.Name)
 			machine.LastStartTime = time.Now()
-			machine.User = nil
+
+			if machine.CurrentState != STATE_CLAIMED {
+				machine.User = nil // only reset when wasn't just claimed
+			}
 		}
 		machine.LastOnTime = time.Now()
 		machine.CurrentState = STATE_RUNNING
@@ -103,15 +105,8 @@ func (machine *LaundryMachine) Claim(user *Roommate) {
 	}
 }
 
-func (machine *LaundryMachine) Unclaim(user *Roommate) error {
-	if machine.User == nil {
-		return errors.New("this machine has not been claimed")
-	} else if machine.User != user {
-		return fmt.Errorf("%s has claimed this machine, not you", machine.User.Name)
-	}
-
+func (machine *LaundryMachine) Unclaim() {
 	machine.User = nil
-	return nil
 }
 
 func (machine *LaundryMachine) NotifyUser() {
@@ -176,5 +171,19 @@ func (machine *LaundryMachine) GetFriendlyState() string {
 }
 
 func (machine *LaundryMachine) MinutesSinceStart() int {
-	return int(time.Since(machine.LastOnTime).Minutes())
+	return int(time.Since(machine.LastStartTime).Minutes())
+}
+
+func (machine *LaundryMachine) TimeSinceStartString() string {
+	minutes := machine.MinutesSinceStart()
+	hours := minutes / 60
+	minutes -= (60 * hours)
+
+	out := ""
+	if hours > 0 {
+		out += fmt.Sprintf("%dh ", hours)
+	}
+	out += fmt.Sprintf("%dm", minutes)
+
+	return out
 }

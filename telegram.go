@@ -88,12 +88,8 @@ func listenForUpdates() {
 			resp.Text = fmt.Sprintf("%s claimed by %s", machine.GetName(), roommate.Name)
 
 		case "unclaim":
-			err := machine.Unclaim(roommate)
-			if err != nil {
-				resp.Text = err.Error()
-			} else {
-				resp.Text = fmt.Sprintf("%s unclaimed by %s", machine.GetName(), roommate.Name)
-			}
+			machine.Unclaim()
+			resp.Text = fmt.Sprintf("%s unclaimed by %s", machine.GetName(), roommate.Name)
 
 		case "collect":
 			machine.MarkCollected()
