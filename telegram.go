@@ -151,5 +151,6 @@ func SendMessageToAll(message string) {
 func sendMessage(chatId int64, message string) {
 	log.Printf("Sending Telegram message %s to %d", message, chatId)
 	msg := tg.NewMessage(chatId, message)
+	msg.ParseMode = "MarkdownV2"
 	messengerBot.Send(msg)
 }

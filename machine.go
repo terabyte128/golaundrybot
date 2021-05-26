@@ -30,13 +30,15 @@ var statePatterns = map[int]int{
 }
 
 type LaundryMachine struct {
-	Name           string    // name for debugging purposes
-	AmpThreshold   float32   // threshold for when considered on
-	IdleTimeoutSec int       // how long to wait before assuming off
-	LastOnTime     time.Time // when the machine was last seen on
-	LastStartTime  time.Time // when the machien was last started
-	CurrentState   int       // current state from state enum
-	User           *Roommate // current user
+	Name                     string    // name for debugging purposes
+	AmpThreshold             float32   // threshold for when considered on
+	IdleTimeoutSec           int       // how long to wait before assuming off
+	LastOnTime               time.Time // when the machine was last seen on
+	LastStartTime            time.Time // when the machien was last started
+	CurrentState             int       // current state from state enum
+	NextAlertTime            time.Time // when to next send an alert
+	NextAlertIntervalMinutes int       // how long to wait before sending another alert once NextAlertTime is reached
+	User                     *Roommate // current user
 }
 
 // NewLaundryMachine creates a new machine
@@ -68,10 +70,13 @@ func (machine *LaundryMachine) Update(ampReading float32) int {
 		if machine.CurrentState == STATE_RUNNING {
 			log.Printf("%s turned off", machine.Name)
 			machine.CurrentState = STATE_WAITING_COLLECTION
-			machine.NotifyUser()
+			// alert after an hour, then wait 2 hours
+			machine.NextAlertTime = time.Now()
+			machine.NextAlertIntervalMinutes = 60
 		}
 	}
 
+	machine.NotifyUser()
 	return machine.CurrentState
 }
 
@@ -110,17 +115,36 @@ func (machine *LaundryMachine) Unclaim() {
 }
 
 func (machine *LaundryMachine) NotifyUser() {
-	message := fmt.Sprintf("The %s is finished, come get your laundry.", machine.Name)
+	var message string
 
 	if machine.CurrentState != STATE_WAITING_COLLECTION {
 		return
 	}
 
+	if machine.NextAlertTime.Unix() > time.Now().Unix() {
+		return
+	}
+
+	elapsedHours := int(time.Since(machine.LastOnTime).Hours())
+	if elapsedHours > 0 {
+		message = fmt.Sprintf("The %s has been finished for %d hours, come get your laundry", machine.Name, elapsedHours)
+	} else {
+		message = fmt.Sprintf("The %s is finished, come get your laundry", machine.Name)
+	}
+
+	message = message + " and [tell me it's collected](http://laundry\\.wolf) so I stop bugging you\\."
+
 	if machine.User != nil {
 		machine.User.SendMessage(message)
 	} else {
+		message = message + "\n\nIn the future, you can [tell me this is your laundry](http://laundry\\.wolf), and I will only message you\\."
 		SendMessageToAll(message)
 	}
+
+	machine.NextAlertTime = time.Now().Add(time.Minute * time.Duration(machine.NextAlertIntervalMinutes))
+	machine.NextAlertIntervalMinutes *= 2
+
+	log.Printf("Next notification will be at %v", machine.NextAlertTime)
 }
 
 func (machine *LaundryMachine) MarkCollected() {
