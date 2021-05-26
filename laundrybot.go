@@ -9,7 +9,7 @@ import (
 )
 
 var machines = map[string]*LaundryMachine{
-	"washer": NewLaundryMachine("washer", 1, 300),
+	"washer": NewLaundryMachine("washer", 7, 300),
 	"dryer":  NewLaundryMachine("dryer", 4, 30),
 }
 
