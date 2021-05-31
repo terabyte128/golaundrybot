@@ -34,7 +34,9 @@ type LaundryMachine struct {
 	AmpThreshold             float32   // threshold for when considered on
 	IdleTimeoutSec           int       // how long to wait before assuming off
 	LastOnTime               time.Time // when the machine was last seen on
-	LastStartTime            time.Time // when the machien was last started
+	LastOffTime              time.Time // when the machine was last seen off
+	RunningTimeoutSec        int       // how long to wait before assuming on
+	LastStartTime            time.Time // when the machine was last started
 	CurrentState             int       // current state from state enum
 	NextAlertTime            time.Time // when to next send an alert
 	NextAlertIntervalMinutes int       // how long to wait before sending another alert once NextAlertTime is reached
@@ -42,38 +44,44 @@ type LaundryMachine struct {
 }
 
 // NewLaundryMachine creates a new machine
-func NewLaundryMachine(name string, ampThreshold float32, idleTimeoutSec int) *LaundryMachine {
+func NewLaundryMachine(name string, ampThreshold float32, idleTimeoutSec int, runningTimeoutSec int) *LaundryMachine {
 	return &LaundryMachine{
-		Name:           name,
-		AmpThreshold:   ampThreshold,
-		IdleTimeoutSec: idleTimeoutSec,
-		LastOnTime:     time.Unix(0, 0),
-		LastStartTime:  time.Unix(0, 0),
-		CurrentState:   STATE_READY,
+		Name:              name,
+		AmpThreshold:      ampThreshold,
+		IdleTimeoutSec:    idleTimeoutSec,
+		RunningTimeoutSec: runningTimeoutSec,
+		LastOnTime:        time.Unix(0, 0),
+		LastOffTime:       time.Unix(0, 0),
+		LastStartTime:     time.Unix(0, 0),
+		CurrentState:      STATE_READY,
 	}
 }
 
 // Update updates the machine's state with the current amp reading and return the new state
 func (machine *LaundryMachine) Update(ampReading float32) int {
 	if ampReading > machine.AmpThreshold {
-		if machine.CurrentState != STATE_RUNNING {
+		// mark RUNNING if it's been sending high values for at least RunningTimeoutSec
+		if time.Since(machine.LastOffTime).Seconds() > float64(machine.RunningTimeoutSec) && machine.CurrentState != STATE_RUNNING {
 			log.Printf("%s turned on", machine.Name)
 			machine.LastStartTime = time.Now()
+			machine.CurrentState = STATE_RUNNING
 
 			if machine.CurrentState != STATE_CLAIMED {
 				machine.User = nil // only reset when wasn't just claimed
 			}
 		}
+
+		// note that we saw it on even if we don't make a transition at this time
 		machine.LastOnTime = time.Now()
-		machine.CurrentState = STATE_RUNNING
-	} else if time.Since(machine.LastOnTime).Seconds() > float64(machine.IdleTimeoutSec) {
-		if machine.CurrentState == STATE_RUNNING {
-			log.Printf("%s turned off", machine.Name)
-			machine.CurrentState = STATE_WAITING_COLLECTION
-			// alert after an hour, then wait 2 hours
-			machine.NextAlertTime = time.Now()
-			machine.NextAlertIntervalMinutes = 60
-		}
+	} else if time.Since(machine.LastOnTime).Seconds() > float64(machine.IdleTimeoutSec) && machine.CurrentState == STATE_RUNNING {
+		log.Printf("%s turned off", machine.Name)
+		machine.CurrentState = STATE_WAITING_COLLECTION
+		// alert after an hour, then wait 2 hours
+		machine.NextAlertTime = time.Now()
+		machine.NextAlertIntervalMinutes = 60
+	} else {
+		// off, but no state transition needed; just mark that its off
+		machine.LastOffTime = time.Now()
 	}
 
 	machine.NotifyUser()
@@ -127,12 +135,18 @@ func (machine *LaundryMachine) NotifyUser() {
 
 	elapsedHours := int(time.Since(machine.LastOnTime).Hours())
 	if elapsedHours > 0 {
-		message = fmt.Sprintf("The %s has been finished for %d hours, come get your laundry", machine.Name, elapsedHours)
+		plural := "s"
+
+		if elapsedHours == 1 {
+			plural = ""
+		}
+
+		message = fmt.Sprintf("The %s has been finished for %d hour%s, come get your laundry", machine.Name, plural, elapsedHours)
 	} else {
 		message = fmt.Sprintf("The %s is finished, come get your laundry", machine.Name)
 	}
 
-	message = message + " and [tell me it's collected](http://laundry\\.wolf) so I stop bugging you\\."
+	message = message + " and [mark it collected](http://laundry\\.wolf)\\."
 
 	if machine.User != nil {
 		machine.User.SendMessage(message)
