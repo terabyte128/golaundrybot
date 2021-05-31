@@ -141,7 +141,7 @@ func (machine *LaundryMachine) NotifyUser() {
 			plural = ""
 		}
 
-		message = fmt.Sprintf("The %s has been finished for %d hour%s, come get your laundry", machine.Name, plural, elapsedHours)
+		message = fmt.Sprintf("The %s has been finished for %d hour%s, come get your laundry", machine.Name, elapsedHours, plural)
 	} else {
 		message = fmt.Sprintf("The %s is finished, come get your laundry", machine.Name)
 	}
