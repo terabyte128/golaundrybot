@@ -10,7 +10,7 @@ import (
 
 var machines = map[string]*LaundryMachine{
 	"washer": NewLaundryMachine("washer", 7, 300),
-	"dryer":  NewLaundryMachine("dryer", 4, 30),
+	"dryer":  NewLaundryMachine("dryer", 3, 30),
 }
 
 var machineNames = make([]string, len(machines))
