@@ -34,10 +34,10 @@ func listenForUpdates() {
 			return
 		}
 
-		log.Printf("Received command %s", update.Message.Command())
+		log.Printf("Received command %s from chat %d", update.Message.Command(), update.Message.Chat.ID)
 
 		valid := false
-		for _, command := range [...]string{"claim", "unclaim", "collect"} {
+		for _, command := range [...]string{"claim", "unclaim", "collect", "start"} {
 			if update.Message.Command() == command {
 				valid = true
 			}
@@ -60,6 +60,12 @@ func listenForUpdates() {
 
 		if roommate == nil {
 			resp.Text = fmt.Sprintf("User %s with ID %d was not found", update.Message.Chat.UserName, update.Message.Chat.ID)
+			updatesBot.Send(resp)
+			continue
+		}
+
+		if update.Message.Command() == "start" {
+			resp.Text = "Thanks! In the future I can message you directly."
 			updatesBot.Send(resp)
 			continue
 		}
