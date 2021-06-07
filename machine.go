@@ -62,13 +62,14 @@ func (machine *LaundryMachine) Update(ampReading float32) int {
 	if ampReading > machine.AmpThreshold {
 		// mark RUNNING if it's been sending high values for at least RunningTimeoutSec
 		if time.Since(machine.LastOffTime).Seconds() > float64(machine.RunningTimeoutSec) && machine.CurrentState != STATE_RUNNING {
-			log.Printf("%s turned on", machine.Name)
-			machine.LastStartTime = time.Now()
-			machine.CurrentState = STATE_RUNNING
+			log.Printf("%s turned on; previous state was %d", machine.Name, machine.CurrentState)
 
 			if machine.CurrentState != STATE_CLAIMED {
 				machine.Unclaim() // only reset when wasn't just claimed
 			}
+
+			machine.LastStartTime = time.Now()
+			machine.CurrentState = STATE_RUNNING
 		}
 
 		// note that we saw it on even if we don't make a transition at this time
