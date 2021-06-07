@@ -67,7 +67,7 @@ func (machine *LaundryMachine) Update(ampReading float32) int {
 			machine.CurrentState = STATE_RUNNING
 
 			if machine.CurrentState != STATE_CLAIMED {
-				machine.User = nil // only reset when wasn't just claimed
+				machine.Unclaim() // only reset when wasn't just claimed
 			}
 		}
 
@@ -94,7 +94,7 @@ func (machine *LaundryMachine) ButtonPress(user *Roommate) {
 		if machine.User != nil && machine.User == user {
 			// reset it
 			log.Printf("%s resetting user", machine.Name)
-			machine.User = nil
+			machine.Unclaim()
 		} else if machine.User == nil {
 			log.Printf("%s setting user to %s", machine.Name, user.Name)
 			machine.User = user
@@ -113,12 +113,23 @@ func (machine *LaundryMachine) ButtonPress(user *Roommate) {
 func (machine *LaundryMachine) Claim(user *Roommate) {
 	machine.User = user
 
+	log.Printf("%s claimed by %s", machine.Name, user.Name)
+
 	if machine.CurrentState == STATE_READY {
 		machine.CurrentState = STATE_CLAIMED
 	}
 }
 
 func (machine *LaundryMachine) Unclaim() {
+	var username string
+
+	if machine.User != nil {
+		username = machine.User.Name
+	} else {
+		username = "nobody"
+	}
+
+	log.Printf("%s unclaimed (previously claimed by %s)", machine.Name, username)
 	machine.User = nil
 }
 
@@ -163,7 +174,7 @@ func (machine *LaundryMachine) NotifyUser() {
 
 func (machine *LaundryMachine) MarkCollected() {
 	machine.CurrentState = STATE_READY
-	machine.User = nil
+	machine.Unclaim()
 }
 
 func (machine *LaundryMachine) SetUser(user *Roommate) {
