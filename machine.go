@@ -132,6 +132,10 @@ func (machine *LaundryMachine) Unclaim() {
 
 	log.Printf("%s unclaimed (previously claimed by %s)", machine.Name, username)
 	machine.User = nil
+
+	if machine.CurrentState == STATE_CLAIMED {
+		machine.CurrentState = STATE_READY
+	}
 }
 
 func (machine *LaundryMachine) NotifyUser() {
